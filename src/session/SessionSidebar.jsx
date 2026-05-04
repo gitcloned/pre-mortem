@@ -36,7 +36,7 @@ export function SessionSidebar({ session, user, myRiskCount, userVotes, onRiskAd
         </div>
       )}
 
-      {session.status === 'open' && (
+      {session.status !== 'closed' && (
         <div className="sidebar-block">
           <h3>Add a risk</h3>
           <AddRiskForm sessionId={session.id} user={user} onAdded={onRiskAdded} />

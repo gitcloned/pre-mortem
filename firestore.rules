@@ -48,10 +48,10 @@ service cloud.firestore {
     match /risks/{riskId} {
       allow read: if isAuth();
       allow create: if isAuth() &&
-        get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.status == 'open';
+        get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.status in ['open', 'voting'];
       allow update, delete: if isAuth() &&
         resource.data.authorId == request.auth.uid &&
-        get(/databases/$(database)/documents/sessions/$(resource.data.sessionId)).data.status == 'open';
+        get(/databases/$(database)/documents/sessions/$(resource.data.sessionId)).data.status in ['open', 'voting'];
     }
 
     match /votes/{voteId} {

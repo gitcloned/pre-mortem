@@ -186,9 +186,11 @@ export async function getMyRisks(sessionId, authorId) {
 
 export async function getSessionRisks(sessionId) {
   const snap = await getDocs(query(
-    collection(db, 'risks'), where('sessionId', '==', sessionId), orderBy('createdAt', 'asc'),
+    collection(db, 'risks'), where('sessionId', '==', sessionId),
   ))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const risks = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  risks.sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0))
+  return risks
 }
 
 export async function castVote(sessionId, riskId, userId) {
