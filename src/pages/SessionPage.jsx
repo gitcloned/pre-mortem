@@ -8,14 +8,13 @@ import {
   getSessionActionItems, advanceSessionStatus,
 } from '../lib/firestore'
 import { SessionSidebar } from '../session/SessionSidebar'
-import { RiskTable } from '../session/RiskTable'
 import { RevealedTable } from '../session/RevealedTable'
 import { VotingTable } from '../session/VotingTable'
 import { ClosedTable } from '../session/ClosedTable'
 import { toMarkdown, toCSV } from '../lib/export'
 
-const STATUS_NEXT = { open: 'revealed', revealed: 'voting', voting: 'closed' }
-const STATUS_LABEL = { open: 'Reveal all risks →', revealed: 'Open voting →', voting: 'Close voting →' }
+const STATUS_NEXT = { open: 'voting', voting: 'closed' }
+const STATUS_LABEL = { open: 'Open voting →', voting: 'Close voting →' }
 
 export function SessionPage() {
   const { sessionId } = useParams()
@@ -37,20 +36,17 @@ export function SessionPage() {
 
   useEffect(() => {
     if (!session) return
-    Promise.all([getProject(session.projectId), getOrg(session.orgId)])
-      .then(([p, o]) => { setProject(p); setOrg(o) })
+    Promise.all([
+      getProject(session.projectId).catch(() => null),
+      getOrg(session.orgId).catch(() => null),
+    ]).then(([p, o]) => { setProject(p); setOrg(o) })
   }, [session?.projectId, session?.orgId])
 
   const loadRisks = useCallback(async () => {
     if (!session || !user) return
-    if (session.status === 'open') {
-      const mine = await getMyRisks(sessionId, user.uid)
-      setMyRisks(mine)
-    } else {
-      const all = await getSessionRisks(sessionId)
-      setAllRisks(all)
-      setMyRisks(all.filter(r => r.authorId === user.uid))
-    }
+    const all = await getSessionRisks(sessionId)
+    setAllRisks(all)
+    setMyRisks(all.filter(r => r.authorId === user.uid))
   }, [session?.status, sessionId, user])
 
   const loadActionItems = useCallback(async () => {
@@ -113,13 +109,11 @@ export function SessionPage() {
 
       <div className="subheader">
         <span className={`status-${session.status}`}>
-          {session.status === 'open' && '● Session open'}
-          {session.status === 'revealed' && '● Risks revealed'}
+          {session.status === 'open' && '● Adding risks — all visible'}
           {session.status === 'voting' && '● Voting open'}
           {session.status === 'closed' && '■ Session closed'}
         </span>
-        {session.status === 'open' && <span className="muted">Your risks are private until revealed</span>}
-        {session.status === 'voting' && <span className="muted">{session.participantIds?.length ?? 0} participants · {allRisks.length} risks</span>}
+        {session.status !== 'closed' && <span className="muted">{session.participantIds?.length ?? 0} participants · {allRisks.length} risks</span>}
         {session.status === 'closed' && (
           <>
             <span className="muted">{allRisks.length} risks · {session.participantIds?.length ?? 0} participants · {votes.length} votes</span>
@@ -141,10 +135,9 @@ export function SessionPage() {
           </div>
 
           {session.status === 'open' && (
-            <><div className="section-sep">My risks ({myRisks.length})</div><RiskTable risks={myRisks} onChanged={loadRisks} /></>
-          )}
-          {session.status === 'revealed' && (
-            <><div className="section-sep">All risks ({allRisks.length}) — grouped by category</div><RevealedTable risks={allRisks} currentUserId={user.uid} /></>
+            <><div className="section-sep">Risks ({allRisks.length}) — all visible</div>
+              <RevealedTable risks={allRisks} currentUserId={user.uid} canEdit={true} onChanged={loadRisks} />
+            </>
           )}
           {session.status === 'voting' && (
             <><div className="section-sep">All risks ({allRisks.length}) — vote on what concerns you most</div>

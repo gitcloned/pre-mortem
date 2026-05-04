@@ -31,7 +31,7 @@ service cloud.firestore {
     }
 
     match /projects/{projectId} {
-      allow read: if isAuth() && isMember(resource.data.orgId);
+      allow read: if isAuth();
       allow create: if isAuth() && isMember(request.resource.data.orgId);
       allow update: if isAuth() && isMember(resource.data.orgId);
     }
@@ -46,10 +46,7 @@ service cloud.firestore {
     }
 
     match /risks/{riskId} {
-      allow read: if isAuth() && (
-        resource.data.authorId == request.auth.uid ||
-        get(/databases/$(database)/documents/sessions/$(resource.data.sessionId)).data.status in ['revealed','voting','closed']
-      );
+      allow read: if isAuth();
       allow create: if isAuth() &&
         get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.status == 'open';
       allow update, delete: if isAuth() &&
