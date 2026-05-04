@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session — Voting state</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #0f172a; }
+
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 0 32px; height: 56px; background: white; border-bottom: 1px solid #e2e8f0; }
+  .logo { font-weight: 800; font-size: 16px; }
+  .logo span { color: #6366f1; }
+  .nav-center { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; }
+  .nav-center strong { color: #0f172a; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: #6366f1; color: white; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+  .facilitator-bar { background: #1e293b; padding: 10px 32px; display: flex; justify-content: space-between; align-items: center; }
+  .facilitator-label { font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .btn-close { background: #ef4444; color: white; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+
+  .status-bar { background: #fef3c7; border-bottom: 1px solid #fcd34d; padding: 10px 32px; display: flex; justify-content: space-between; align-items: center; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #d97706; }
+  .status-text { font-size: 13px; font-weight: 600; color: #92400e; }
+  .status-sub { font-size: 12px; color: #b45309; }
+
+  .page { max-width: 760px; margin: 0 auto; padding: 32px 24px; }
+  .session-title { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+  .breadcrumb { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+
+  /* VOTE BUDGET */
+  .vote-budget { background: white; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin: 20px 0; display: flex; align-items: center; justify-content: space-between; }
+  .budget-label { font-size: 13px; font-weight: 600; color: #374151; }
+  .budget-dots { display: flex; gap: 8px; }
+  .vote-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #6366f1; background: #6366f1; display: flex; align-items: center; justify-content: center; }
+  .vote-dot.used { background: white; }
+  .vote-dot svg { width: 14px; height: 14px; }
+
+  /* CATEGORY GROUP */
+  .category-group { margin-bottom: 28px; }
+  .category-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; }
+
+  /* RISK ROW */
+  .risk-row { background: white; border-radius: 10px; border: 1px solid #e2e8f0; padding: 16px 18px; margin-bottom: 8px; display: flex; gap: 16px; align-items: flex-start; }
+  .vote-btn { flex-shrink: 0; width: 48px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .vote-count { font-size: 22px; font-weight: 800; color: #6366f1; line-height: 1; }
+  .vote-count.mine { color: #6366f1; }
+  .vote-label { font-size: 10px; color: #94a3b8; font-weight: 500; }
+  .upvote-btn { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
+  .upvote-btn:hover { background: #ede9fe; border-color: #a5b4fc; }
+  .upvote-btn.voted { background: #6366f1; border-color: #6366f1; color: white; }
+
+  .risk-content { flex: 1; }
+  .risk-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .risk-desc { font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 8px; }
+  .risk-author { font-size: 11px; color: #94a3b8; }
+  .risk-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .tag { padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .tag-likelihood { background: #fef3c7; color: #92400e; }
+  .tag-impact { background: #fee2e2; color: #b91c1c; }
+
+  /* vote bar */
+  .vote-bar-wrap { margin-top: 6px; }
+  .vote-bar { height: 4px; background: #f1f5f9; border-radius: 2px; overflow: hidden; }
+  .vote-bar-fill { height: 100%; background: #6366f1; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">pre<span>mortem</span></div>
+  <div class="nav-center">
+    <span>Acme Corp</span>
+    <span style="color:#cbd5e1;">›</span>
+    <strong>Mobile App Relaunch</strong>
+  </div>
+  <div class="avatar">A</div>
+</nav>
+
+<div class="facilitator-bar">
+  <div class="facilitator-label">You are the facilitator</div>
+  <button class="btn-close">Close voting →</button>
+</div>
+
+<div class="status-bar">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="status-dot"></div>
+    <div>
+      <div class="status-text">Voting is open</div>
+      <div class="status-sub">Vote on the risks that concern you most</div>
+    </div>
+  </div>
+  <div style="font-size:12px;color:#b45309;">7 participants · 14 risks</div>
+</div>
+
+<div class="page">
+
+  <div class="breadcrumb">Mobile App Relaunch · Pre-mortem sessions</div>
+  <div class="session-title">Launch risk review — v2.0</div>
+
+  <div class="vote-budget">
+    <div>
+      <div class="budget-label">Your votes remaining: 1 of 3</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:2px;">You can concentrate votes on risks you care about most</div>
+    </div>
+    <div class="budget-dots">
+      <div class="vote-dot used"></div>
+      <div class="vote-dot used"></div>
+      <div class="vote-dot" style="background:white;border:2px solid #e2e8f0;"></div>
+    </div>
+  </div>
+
+  <!-- Category: Timeline -->
+  <div class="category-group">
+    <div class="category-label">Timeline (3 risks)</div>
+
+    <div class="risk-row">
+      <div class="vote-btn">
+        <div class="vote-count">11</div>
+        <div class="vote-label">votes</div>
+        <button class="upvote-btn voted">▲</button>
+      </div>
+      <div class="risk-content">
+        <div class="risk-title">Marketing and engineering timelines misaligned</div>
+        <div class="risk-desc">Marketing committed to a launch date based on last quarter's estimates. Engineering has since revised scope upward.</div>
+        <div class="risk-meta">
+          <span class="tag tag-likelihood">Likelihood: 5</span>
+          <span class="tag tag-impact">Impact: 4</span>
+        </div>
+        <div class="vote-bar-wrap">
+          <div class="vote-bar"><div class="vote-bar-fill" style="width:78%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="risk-row">
+      <div class="vote-btn">
+        <div class="vote-count" style="color:#94a3b8;">4</div>
+        <div class="vote-label">votes</div>
+        <button class="upvote-btn">▲</button>
+      </div>
+      <div class="risk-content">
+        <div class="risk-title">Third-party API dependency slips</div>
+        <div class="risk-desc">We rely on a payments provider releasing a new SDK. Their track record on delivery is poor.</div>
+        <div class="risk-meta">
+          <span class="tag tag-likelihood">Likelihood: 3</span>
+          <span class="tag tag-impact">Impact: 5</span>
+        </div>
+        <div class="vote-bar-wrap">
+          <div class="vote-bar"><div class="vote-bar-fill" style="width:28%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Category: Technical -->
+  <div class="category-group">
+    <div class="category-label">Technical (2 risks)</div>
+
+    <div class="risk-row">
+      <div class="vote-btn">
+        <div class="vote-count">9</div>
+        <div class="vote-label">votes</div>
+        <button class="upvote-btn voted">▲</button>
+      </div>
+      <div class="risk-content">
+        <div class="risk-title">Insufficient beta testing with real users</div>
+        <div class="risk-desc">We skipped a proper beta program. By launch, we hadn't seen how non-technical users interact with the new onboarding flow.</div>
+        <div class="risk-meta">
+          <span class="tag tag-likelihood">Likelihood: 4</span>
+          <span class="tag tag-impact">Impact: 5</span>
+        </div>
+        <div class="vote-bar-wrap">
+          <div class="vote-bar"><div class="vote-bar-fill" style="width:64%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="risk-row">
+      <div class="vote-btn">
+        <div class="vote-count" style="color:#94a3b8;">2</div>
+        <div class="vote-label">votes</div>
+        <button class="upvote-btn">▲</button>
+      </div>
+      <div class="risk-content">
+        <div class="risk-title">Performance regression on low-end Android devices</div>
+        <div class="risk-desc">New animation library hasn't been benchmarked below mid-range hardware.</div>
+        <div class="risk-meta">
+          <span class="tag tag-likelihood">Likelihood: 3</span>
+          <span class="tag tag-impact">Impact: 3</span>
+        </div>
+        <div class="vote-bar-wrap">
+          <div class="vote-bar"><div class="vote-bar-fill" style="width:14%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session — Closed (action items + export)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #0f172a; }
+
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 0 32px; height: 56px; background: white; border-bottom: 1px solid #e2e8f0; }
+  .logo { font-weight: 800; font-size: 16px; }
+  .logo span { color: #6366f1; }
+  .nav-center { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; }
+  .nav-center strong { color: #0f172a; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: #6366f1; color: white; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+  .status-bar { background: #f1f5f9; border-bottom: 1px solid #e2e8f0; padding: 10px 32px; display: flex; justify-content: space-between; align-items: center; }
+  .status-text { font-size: 13px; font-weight: 600; color: #374151; }
+  .status-sub { font-size: 12px; color: #94a3b8; }
+  .export-btn { background: #0f172a; color: white; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+  .page { max-width: 760px; margin: 0 auto; padding: 32px 24px; }
+  .session-title { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+  .breadcrumb { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+
+  /* SUMMARY STATS */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0 32px; }
+  .stat { background: white; border-radius: 10px; border: 1px solid #e2e8f0; padding: 16px 18px; }
+  .stat-num { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .stat-label { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+  /* RISK CARD (closed) */
+  .risk-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 16px; overflow: hidden; }
+  .risk-card-header { display: flex; gap: 16px; align-items: flex-start; padding: 18px 20px; }
+  .rank-badge { flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px; background: #ede9fe; color: #6366f1; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .rank-badge.top { background: #6366f1; color: white; }
+  .risk-main { flex: 1; }
+  .risk-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .risk-desc { font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 8px; }
+  .risk-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .tag-category { background: #ede9fe; color: #7c3aed; }
+  .tag-likelihood { background: #fef3c7; color: #92400e; }
+  .tag-impact { background: #fee2e2; color: #b91c1c; }
+  .vote-pill { display: flex; align-items: center; gap: 4px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 700; color: #6366f1; }
+
+  /* ACTION ITEM */
+  .action-section { border-top: 1px solid #f1f5f9; padding: 14px 20px; background: #fafafe; }
+  .action-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .action-row { display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px; align-items: flex-start; }
+  .form-input { padding: 7px 12px; border-radius: 7px; border: 1px solid #e2e8f0; font-size: 13px; width: 100%; font-family: inherit; background: white; }
+  .form-input:focus { outline: none; border-color: #a5b4fc; }
+  .btn-save-sm { background: #6366f1; color: white; padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; white-space: nowrap; }
+
+  /* Existing action item display */
+  .action-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+  .action-item:last-child { border-bottom: none; }
+  .assignee-chip { background: #0f172a; color: white; border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .action-remarks { font-size: 13px; color: #374151; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">pre<span>mortem</span></div>
+  <div class="nav-center">
+    <span>Acme Corp</span>
+    <span style="color:#cbd5e1;">›</span>
+    <strong>Mobile App Relaunch</strong>
+  </div>
+  <div class="avatar">A</div>
+</nav>
+
+<div class="status-bar">
+  <div>
+    <div class="status-text">Session closed · Results</div>
+    <div class="status-sub">Risks ranked by votes · Add action items below</div>
+  </div>
+  <button class="export-btn">↓ Export as CSV / Markdown</button>
+</div>
+
+<div class="page">
+
+  <div class="breadcrumb">Mobile App Relaunch · Pre-mortem sessions</div>
+  <div class="session-title">Launch risk review — v2.0</div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num">14</div>
+      <div class="stat-label">Risks identified</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">7</div>
+      <div class="stat-label">Participants</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">21</div>
+      <div class="stat-label">Total votes cast</div>
+    </div>
+  </div>
+
+  <!-- Risk #1 -->
+  <div class="risk-card">
+    <div class="risk-card-header">
+      <div class="rank-badge top">#1</div>
+      <div class="risk-main">
+        <div class="risk-title">Marketing and engineering timelines misaligned</div>
+        <div class="risk-desc">Marketing committed to a launch date based on last quarter's estimates. Engineering has since revised scope upward.</div>
+        <div class="risk-meta">
+          <span class="tag tag-category">Timeline</span>
+          <span class="tag tag-likelihood">Likelihood: 5</span>
+          <span class="tag tag-impact">Impact: 4</span>
+          <span class="vote-pill">▲ 11 votes</span>
+        </div>
+      </div>
+    </div>
+    <div class="action-section">
+      <div class="action-label">Action items</div>
+      <div class="action-item">
+        <span class="assignee-chip">Sarah K.</span>
+        <span class="action-remarks">Schedule joint timeline review with marketing and engineering leads by end of week. Agree on a single source-of-truth date in Notion.</span>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="action-row">
+          <input class="form-input" type="text" placeholder="Assignee name">
+          <input class="form-input" type="text" placeholder="Remarks / next steps">
+          <button class="btn-save-sm">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk #2 -->
+  <div class="risk-card">
+    <div class="risk-card-header">
+      <div class="rank-badge">#2</div>
+      <div class="risk-main">
+        <div class="risk-title">Insufficient beta testing with real users</div>
+        <div class="risk-desc">We skipped a proper beta program. By launch, we hadn't seen how non-technical users interact with the new onboarding flow.</div>
+        <div class="risk-meta">
+          <span class="tag tag-category">Technical</span>
+          <span class="tag tag-likelihood">Likelihood: 4</span>
+          <span class="tag tag-impact">Impact: 5</span>
+          <span class="vote-pill">▲ 9 votes</span>
+        </div>
+      </div>
+    </div>
+    <div class="action-section">
+      <div class="action-label">Action items</div>
+      <div class="action-row">
+        <input class="form-input" type="text" placeholder="Assignee name">
+        <input class="form-input" type="text" placeholder="Remarks / next steps">
+        <button class="btn-save-sm">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk #3 -->
+  <div class="risk-card">
+    <div class="risk-card-header">
+      <div class="rank-badge">#3</div>
+      <div class="risk-main">
+        <div class="risk-title">Third-party API dependency slips</div>
+        <div class="risk-desc">We rely on a payments provider releasing a new SDK. Their track record on delivery is poor.</div>
+        <div class="risk-meta">
+          <span class="tag tag-category">External</span>
+          <span class="tag tag-likelihood">Likelihood: 3</span>
+          <span class="tag tag-impact">Impact: 5</span>
+          <span class="vote-pill">▲ 4 votes</span>
+        </div>
+      </div>
+    </div>
+    <div class="action-section">
+      <div class="action-label">Action items</div>
+      <div class="action-row">
+        <input class="form-input" type="text" placeholder="Assignee name">
+        <input class="form-input" type="text" placeholder="Remarks / next steps">
+        <button class="btn-save-sm">Add</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

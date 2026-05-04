@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #0f172a; }
+
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 0 32px; height: 56px; background: white; border-bottom: 1px solid #e2e8f0; }
+  .logo { font-weight: 800; font-size: 16px; color: #0f172a; }
+  .logo span { color: #6366f1; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: #6366f1; color: white; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+  .page { max-width: 900px; margin: 0 auto; padding: 36px 24px; }
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-primary { background: #6366f1; color: white; }
+  .btn-ghost { background: none; border: 1.5px solid #e2e8f0; color: #374151; }
+
+  /* ORG CARD */
+  .org-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 16px; overflow: hidden; }
+  .org-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #f1f5f9; }
+  .org-name { font-size: 16px; font-weight: 700; }
+  .org-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  .org-actions { display: flex; gap: 8px; }
+
+  /* PROJECT LIST */
+  .projects { padding: 16px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .project-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9; cursor: pointer; transition: background 0.1s; }
+  .project-row:hover { background: #f1f5f9; }
+  .project-name { font-size: 14px; font-weight: 600; }
+  .project-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-active { background: #dcfce7; color: #16a34a; }
+  .badge-archived { background: #f1f5f9; color: #94a3b8; }
+  .badge-open { background: #dbeafe; color: #2563eb; }
+  .badge-voting { background: #fef3c7; color: #d97706; }
+  .badge-closed { background: #f1f5f9; color: #64748b; }
+
+  .add-project { display: flex; align-items: center; gap: 8px; padding: 10px 16px; color: #6366f1; font-size: 13px; font-weight: 600; cursor: pointer; margin: 0 24px 16px; border-radius: 8px; border: 1.5px dashed #c7d2fe; background: #fafafe; }
+
+  /* RECENT SESSIONS */
+  .section-title { font-size: 13px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .session-list { display: flex; flex-direction: column; gap: 8px; }
+  .session-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: white; border-radius: 10px; border: 1px solid #e2e8f0; cursor: pointer; }
+  .session-row:hover { border-color: #a5b4fc; }
+  .session-info { flex: 1; }
+  .session-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .session-crumbs { font-size: 12px; color: #94a3b8; }
+  .session-right { display: flex; gap: 12px; align-items: center; }
+  .session-count { font-size: 12px; color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">pre<span>mortem</span></div>
+  <div class="avatar">A</div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>My Organisations</h1>
+    <button class="btn btn-ghost">+ New organisation</button>
+  </div>
+
+  <!-- Org 1 -->
+  <div class="org-card">
+    <div class="org-header">
+      <div>
+        <div class="org-name">Acme Corp</div>
+        <div class="org-meta">4 members · 3 active projects</div>
+      </div>
+      <div class="org-actions">
+        <button class="btn btn-ghost" style="font-size:12px;">Settings</button>
+        <button class="btn btn-primary" style="font-size:12px;">Open</button>
+      </div>
+    </div>
+    <div class="projects">
+      <div class="project-row">
+        <div>
+          <div class="project-name">Mobile App Relaunch</div>
+          <div class="project-meta">2 sessions · last active 2 days ago</div>
+        </div>
+        <span class="badge badge-active">Active</span>
+      </div>
+      <div class="project-row">
+        <div>
+          <div class="project-name">API Migration Q3</div>
+          <div class="project-meta">1 session · last active 1 week ago</div>
+        </div>
+        <span class="badge badge-active">Active</span>
+      </div>
+      <div class="project-row" style="opacity:0.6;">
+        <div>
+          <div class="project-name">Website Redesign</div>
+          <div class="project-meta">3 sessions · archived</div>
+        </div>
+        <span class="badge badge-archived">Archived</span>
+      </div>
+    </div>
+    <div class="add-project">+ New project</div>
+  </div>
+
+  <!-- Org 2 (minimal) -->
+  <div class="org-card">
+    <div class="org-header">
+      <div>
+        <div class="org-name">Side Project LLC</div>
+        <div class="org-meta">2 members · 1 active project</div>
+      </div>
+      <div class="org-actions">
+        <button class="btn btn-ghost" style="font-size:12px;">Settings</button>
+        <button class="btn btn-primary" style="font-size:12px;">Open</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent sessions -->
+  <div style="margin-top: 36px;">
+    <div class="section-title">Recent sessions</div>
+    <div class="session-list">
+      <div class="session-row">
+        <div class="session-info">
+          <div class="session-name">Launch risk review — v2.0</div>
+          <div class="session-crumbs">Acme Corp · Mobile App Relaunch</div>
+        </div>
+        <div class="session-right">
+          <span class="session-count">8 participants</span>
+          <span class="badge badge-voting">Voting</span>
+        </div>
+      </div>
+      <div class="session-row">
+        <div class="session-info">
+          <div class="session-name">API Migration pre-mortem</div>
+          <div class="session-crumbs">Acme Corp · API Migration Q3</div>
+        </div>
+        <div class="session-right">
+          <span class="session-count">5 participants</span>
+          <span class="badge badge-open">Open</span>
+        </div>
+      </div>
+      <div class="session-row">
+        <div class="session-info">
+          <div class="session-name">Initial risk review</div>
+          <div class="session-crumbs">Acme Corp · Mobile App Relaunch</div>
+        </div>
+        <div class="session-right">
+          <span class="session-count">6 participants</span>
+          <span class="badge badge-closed">Closed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

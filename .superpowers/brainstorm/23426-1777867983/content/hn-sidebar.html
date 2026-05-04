@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pre-mortem — sidebar layout</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Verdana, Geneva, sans-serif; font-size: 13px; background: #f6f6ef; color: #222; }
+  a { color: #4f46e5; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* HEADER */
+  #header { background: #4f46e5; padding: 4px 10px; display: flex; align-items: center; gap: 12px; }
+  #header .logo { color: white; font-weight: bold; font-size: 13px; border: 1px solid rgba(255,255,255,0.5); padding: 1px 5px; }
+  #header nav a { color: white; font-size: 12px; margin-right: 10px; }
+  #header nav span { color: rgba(255,255,255,0.4); margin-right: 10px; }
+  #header .right { margin-left: auto; color: white; font-size: 12px; }
+  #header .right a { color: white; }
+
+  /* SUBHEADER */
+  .subheader { background: #e8e8e0; padding: 3px 10px; font-size: 11px; color: #444; border-bottom: 1px solid #ccc; display: flex; align-items: center; gap: 14px; }
+  .subheader .spacer { flex: 1; }
+  .subheader a.action-link { background: #4f46e5; color: white; padding: 2px 10px; font-size: 11px; font-weight: bold; text-decoration: none; }
+  .subheader a.action-link:hover { background: #3730a3; }
+  .status-open   { color: #1a7f37; font-weight: bold; }
+  .status-voting { color: #9a6700; font-weight: bold; }
+  .status-closed { color: #444;    font-weight: bold; }
+
+  /* TWO-COLUMN LAYOUT */
+  #layout { display: flex; max-width: 1100px; margin: 0 auto; gap: 0; }
+
+  /* MAIN */
+  #main { flex: 1; padding: 10px 12px; min-width: 0; }
+
+  /* SESSION INFO */
+  .session-info { padding-bottom: 8px; border-bottom: 1px solid #ccc; margin-bottom: 8px; }
+  .session-info h1 { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+  .session-info .meta { font-size: 11px; color: #666; }
+  .session-info .prompt { margin-top: 5px; font-size: 12px; color: #555; background: #fffff0; border-left: 3px solid #9a6700; padding: 3px 8px; }
+
+  /* RISK TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #e8e8e0; }
+  thead th { text-align: left; font-size: 10px; font-weight: bold; padding: 3px 6px; border-bottom: 1px solid #ccc; color: #555; text-transform: uppercase; letter-spacing: 0.04em; }
+  tbody tr { border-bottom: 1px solid #eee; vertical-align: top; }
+  tbody tr:hover { background: #fffef0; }
+  tbody td { padding: 5px 6px; font-size: 12px; line-height: 1.4; }
+  .row-num { color: #bbb; font-size: 11px; width: 20px; text-align: right; }
+  .vote-cell { text-align: center; width: 44px; }
+  .vote-num { font-size: 17px; font-weight: bold; color: #4f46e5; line-height: 1.1; }
+  .vote-num.dim { color: #bbb; }
+  .vote-lnk { font-size: 10px; color: #999; cursor: pointer; display: block; }
+  .vote-lnk:hover { color: #4f46e5; text-decoration: none; }
+  .vote-lnk.active { color: #4f46e5; font-weight: bold; }
+  .risk-title { font-weight: bold; font-size: 12px; }
+  .risk-desc { font-size: 11px; color: #666; margin-top: 2px; }
+  .my-badge { font-size: 9px; background: #ede9fe; color: #4f46e5; padding: 0 4px; font-weight: bold; margin-left: 5px; }
+  td.cat-col { font-size: 10px; color: #4f46e5; font-weight: bold; width: 80px; }
+  td.li-col  { font-size: 11px; color: #888; text-align: center; width: 44px; }
+  td.action-col { font-size: 11px; color: #444; width: 200px; }
+  .assignee  { font-weight: bold; color: #222; }
+  .no-action { color: #ccc; font-style: italic; font-size: 10px; }
+  .inline-action { display: flex; flex-direction: column; gap: 3px; margin-top: 3px; }
+  .inline-action input { font-size: 10px; border: 1px solid #ccc; padding: 2px 4px; width: 100%; font-family: Verdana; }
+  .inline-action button { font-size: 10px; background: #4f46e5; color: white; border: none; padding: 2px 6px; cursor: pointer; font-family: Verdana; align-self: flex-start; }
+  .edit-links { font-size: 10px; color: #bbb; margin-top: 2px; }
+  .edit-links a { color: #bbb; margin-right: 6px; }
+  .edit-links a:hover { color: #c00; }
+  .section-sep { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 6px; background: #eeeee6; border-bottom: 1px solid #ddd; border-top: 1px solid #ddd; }
+
+  /* RIGHT SIDEBAR */
+  #sidebar { width: 240px; flex-shrink: 0; border-left: 1px solid #ccc; background: #f0f0e8; padding: 10px; display: flex; flex-direction: column; gap: 14px; }
+
+  .sidebar-block { }
+  .sidebar-block h3 { font-size: 11px; font-weight: bold; color: #555; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-bottom: 8px; }
+
+  /* STATS */
+  .stat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; border-bottom: 1px solid #e4e4dc; }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { color: #666; }
+  .stat-val { font-weight: bold; color: #222; }
+  .stat-val.highlight { color: #4f46e5; }
+
+  /* ADD RISK FORM */
+  .form-field { margin-bottom: 7px; }
+  .form-field label { display: block; font-size: 10px; font-weight: bold; color: #555; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .form-field input,
+  .form-field select,
+  .form-field textarea { width: 100%; font-family: Verdana, Geneva, sans-serif; font-size: 11px; border: 1px solid #ccc; padding: 3px 5px; background: white; }
+  .form-field textarea { height: 56px; resize: vertical; }
+  .scale-row { display: flex; gap: 3px; }
+  .scale-btn { width: 100%; border: 1px solid #ccc; background: white; font-size: 11px; font-family: Verdana; cursor: pointer; padding: 2px 0; text-align: center; }
+  .scale-btn.sel { background: #4f46e5; color: white; border-color: #4f46e5; }
+  .sidebar-submit { width: 100%; background: #4f46e5; color: white; border: none; padding: 5px 0; font-size: 12px; font-weight: bold; cursor: pointer; font-family: Verdana; margin-top: 4px; }
+  .sidebar-submit:hover { background: #3730a3; }
+
+  /* VOTE BUDGET (sidebar, voting state) */
+  .vote-budget-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .vote-pips { display: flex; gap: 4px; }
+  .pip { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #4f46e5; }
+  .pip.used { background: #4f46e5; }
+  .pip.open { background: white; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <span class="logo">PM</span>
+  <nav>
+    <a href="#">Acme Corp</a><span>|</span>
+    <a href="#">Mobile App Relaunch</a><span>|</span>
+    <a href="#" style="color:rgba(255,255,255,0.7)">sessions</a>
+  </nav>
+  <div class="right">ashish &nbsp;|&nbsp; <a href="#">logout</a></div>
+</div>
+
+<!-- ============ OPEN STATE ============ -->
+<div class="subheader">
+  <span class="status-open">&#11044; Session open</span>
+  <span><b>7</b> participants joined &nbsp;&middot;&nbsp; risks are private until revealed</span>
+  <span class="spacer"></span>
+  <span style="font-size:11px;color:#666;">Facilitator: </span>
+  <a class="action-link" href="#">Reveal all risks &rarr;</a>
+</div>
+
+<div id="layout">
+
+  <!-- MAIN -->
+  <div id="main">
+    <div class="session-info">
+      <h1>Launch risk review — v2.0</h1>
+      <div class="meta">Mobile App Relaunch &nbsp;&middot;&nbsp; created by ashish &nbsp;&middot;&nbsp; open since May 4</div>
+      <div class="prompt">"It's October 2026. The mobile app relaunch was a failure. What caused it?"</div>
+    </div>
+
+    <div class="section-sep">My risks (2)</div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:20px;"></th>
+          <th>Risk</th>
+          <th>Category</th>
+          <th>L&nbsp;/&nbsp;I</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="row-num">1.</td>
+          <td>
+            <div class="risk-title">Insufficient beta testing with real users</div>
+            <div class="risk-desc">Skipped proper beta — onboarding never validated with non-technical users before launch.</div>
+            <div class="edit-links"><a href="#">edit</a><a href="#" style="color:#f87171;">delete</a></div>
+          </td>
+          <td class="cat-col">Technical</td>
+          <td class="li-col">4 / 5</td>
+        </tr>
+        <tr>
+          <td class="row-num">2.</td>
+          <td>
+            <div class="risk-title">Marketing and engineering timelines misaligned</div>
+            <div class="risk-desc">Marketing committed to a date based on stale estimates. Engineering scope has grown since.</div>
+            <div class="edit-links"><a href="#">edit</a><a href="#" style="color:#f87171;">delete</a></div>
+          </td>
+          <td class="cat-col">Timeline</td>
+          <td class="li-col">5 / 4</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Spacer to show voting state below -->
+    <div style="margin-top:24px;">
+      <div style="font-size:11px;color:#999;border-top:2px dashed #ccc;padding-top:8px;margin-bottom:8px;">↓ Voting state (same URL — facilitator moved session forward)</div>
+
+      <div class="subheader" style="margin: 0 -12px 8px;">
+        <span class="status-voting">&#11044; Voting open</span>
+        <span><b>7</b> participants &nbsp;&middot;&nbsp; <b>14</b> risks</span>
+        <span class="spacer"></span>
+        <a class="action-link" href="#">Close voting &rarr;</a>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:44px;text-align:center;">Votes</th>
+            <th style="width:20px;"></th>
+            <th>Risk</th>
+            <th>Category</th>
+            <th>L&nbsp;/&nbsp;I</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="vote-cell"><div class="vote-num">11</div><a class="vote-lnk active" href="#">&#9650; voted</a></td>
+            <td class="row-num">1.</td>
+            <td>
+              <div class="risk-title">Marketing and engineering timelines misaligned <span class="my-badge">mine</span></div>
+              <div class="risk-desc">Marketing committed to a date based on stale estimates. Engineering scope has grown.</div>
+            </td>
+            <td class="cat-col">Timeline</td>
+            <td class="li-col">5 / 4</td>
+          </tr>
+          <tr>
+            <td class="vote-cell"><div class="vote-num">9</div><a class="vote-lnk active" href="#">&#9650; voted</a></td>
+            <td class="row-num">2.</td>
+            <td>
+              <div class="risk-title">Insufficient beta testing with real users <span class="my-badge">mine</span></div>
+              <div class="risk-desc">Skipped proper beta — onboarding never validated with non-technical users.</div>
+            </td>
+            <td class="cat-col">Technical</td>
+            <td class="li-col">4 / 5</td>
+          </tr>
+          <tr>
+            <td class="vote-cell"><div class="vote-num dim">4</div><a class="vote-lnk" href="#">&#9650; vote</a></td>
+            <td class="row-num">3.</td>
+            <td>
+              <div class="risk-title">Third-party API dependency slips</div>
+              <div class="risk-desc">Payments provider SDK delivery track record is poor.</div>
+            </td>
+            <td class="cat-col">External</td>
+            <td class="li-col">3 / 5</td>
+          </tr>
+          <tr>
+            <td class="vote-cell"><div class="vote-num dim">2</div><a class="vote-lnk" href="#">&#9650; vote</a></td>
+            <td class="row-num">4.</td>
+            <td>
+              <div class="risk-title">Performance regression on low-end Android</div>
+              <div class="risk-desc">New animation library not benchmarked below mid-range hardware.</div>
+            </td>
+            <td class="cat-col">Technical</td>
+            <td class="li-col">3 / 3</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Closed state -->
+    <div style="margin-top:24px;">
+      <div style="font-size:11px;color:#999;border-top:2px dashed #ccc;padding-top:8px;margin-bottom:8px;">↓ Closed state — results + action items</div>
+
+      <div class="subheader" style="margin: 0 -12px 8px;">
+        <span class="status-closed">&#9632; Session closed</span>
+        <span>14 risks &nbsp;&middot;&nbsp; 7 participants &nbsp;&middot;&nbsp; 21 votes</span>
+        <span class="spacer"></span>
+        <a class="action-link" href="#">&#8595; Export</a>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:44px;text-align:center;">Votes</th>
+            <th style="width:20px;"></th>
+            <th>Risk</th>
+            <th>Category</th>
+            <th>L&nbsp;/&nbsp;I</th>
+            <th>Action item</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="vote-cell"><div class="vote-num">11</div></td>
+            <td class="row-num">1.</td>
+            <td>
+              <div class="risk-title">Marketing and engineering timelines misaligned</div>
+              <div class="risk-desc">Marketing committed to a date based on stale estimates.</div>
+            </td>
+            <td class="cat-col">Timeline</td>
+            <td class="li-col">5 / 4</td>
+            <td class="action-col">
+              <span class="assignee">Sarah K.</span> — Joint timeline review with marketing + eng. Single source-of-truth date in Notion.
+              <div><a href="#" style="font-size:10px;">+ add</a></div>
+            </td>
+          </tr>
+          <tr>
+            <td class="vote-cell"><div class="vote-num">9</div></td>
+            <td class="row-num">2.</td>
+            <td>
+              <div class="risk-title">Insufficient beta testing with real users</div>
+              <div class="risk-desc">Onboarding never validated with non-technical users.</div>
+            </td>
+            <td class="cat-col">Technical</td>
+            <td class="li-col">4 / 5</td>
+            <td class="action-col">
+              <span class="no-action">none yet</span>
+              <div class="inline-action">
+                <input type="text" placeholder="Assignee">
+                <input type="text" placeholder="Remarks">
+                <button>add</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="vote-cell"><div class="vote-num dim">4</div></td>
+            <td class="row-num">3.</td>
+            <td>
+              <div class="risk-title">Third-party API dependency slips</div>
+              <div class="risk-desc">Payments provider SDK delivery track record is poor.</div>
+            </td>
+            <td class="cat-col">External</td>
+            <td class="li-col">3 / 5</td>
+            <td class="action-col">
+              <span class="no-action">none yet</span>
+              <div class="inline-action">
+                <input type="text" placeholder="Assignee">
+                <input type="text" placeholder="Remarks">
+                <button>add</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT SIDEBAR -->
+  <div id="sidebar">
+
+    <!-- STATS -->
+    <div class="sidebar-block">
+      <h3>Session stats</h3>
+      <div class="stat-row"><span class="stat-label">Status</span><span class="stat-val highlight">Open</span></div>
+      <div class="stat-row"><span class="stat-label">Participants</span><span class="stat-val">7</span></div>
+      <div class="stat-row"><span class="stat-label">Risks added</span><span class="stat-val">—</span></div>
+      <div class="stat-row"><span class="stat-label">My risks</span><span class="stat-val highlight">2</span></div>
+      <div class="stat-row"><span class="stat-label">Facilitator</span><span class="stat-val">ashish</span></div>
+      <div class="stat-row"><span class="stat-label">Created</span><span class="stat-val">May 4</span></div>
+    </div>
+
+    <!-- VOTE BUDGET (shown during voting) -->
+    <div class="sidebar-block">
+      <h3>Your votes</h3>
+      <div class="vote-budget-row">
+        <span style="font-size:12px;"><b>1</b> of 3 remaining</span>
+        <div class="vote-pips">
+          <div class="pip used"></div>
+          <div class="pip used"></div>
+          <div class="pip open"></div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:4px;">You can put multiple votes on one risk</div>
+    </div>
+
+    <!-- ADD RISK FORM (shown during open state) -->
+    <div class="sidebar-block">
+      <h3>Add a risk</h3>
+      <div class="form-field">
+        <label>Title *</label>
+        <input type="text" placeholder="What could go wrong?">
+      </div>
+      <div class="form-field">
+        <label>Description</label>
+        <textarea placeholder="What happened and why did the project fail?"></textarea>
+      </div>
+      <div class="form-field">
+        <label>Category *</label>
+        <select>
+          <option>Timeline</option>
+          <option>Technical</option>
+          <option>Team</option>
+          <option>External</option>
+          <option>Scope</option>
+          <option>Communication</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Likelihood (1–5)</label>
+        <div class="scale-row">
+          <button class="scale-btn">1</button>
+          <button class="scale-btn">2</button>
+          <button class="scale-btn sel">3</button>
+          <button class="scale-btn">4</button>
+          <button class="scale-btn">5</button>
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Impact (1–5)</label>
+        <div class="scale-row">
+          <button class="scale-btn">1</button>
+          <button class="scale-btn">2</button>
+          <button class="scale-btn">3</button>
+          <button class="scale-btn sel">4</button>
+          <button class="scale-btn">5</button>
+        </div>
+      </div>
+      <button class="sidebar-submit">Save risk</button>
+    </div>
+
+    <!-- SHARE LINK -->
+    <div class="sidebar-block">
+      <h3>Share session</h3>
+      <div style="font-size:11px;color:#666;margin-bottom:5px;">Anyone with this link can join and add risks</div>
+      <input type="text" value="premortem.app/join/xk9f2p" style="width:100%;font-size:10px;border:1px solid #ccc;padding:3px 5px;font-family:Verdana;background:#fff;" readonly>
+      <div style="margin-top:4px;"><a href="#" style="font-size:11px;">copy link</a></div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pre-Mortem — Landing</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fafafa; color: #0f172a; }
+
+  /* NAV */
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 48px; background: white; border-bottom: 1px solid #f1f5f9; }
+  .logo { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; color: #0f172a; }
+  .logo span { color: #6366f1; }
+  .nav-right { display: flex; gap: 12px; align-items: center; }
+  .btn-ghost { padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; background: none; color: #64748b; }
+  .btn-primary { padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; background: #6366f1; color: white; }
+
+  /* HERO */
+  .hero { max-width: 680px; margin: 0 auto; padding: 96px 24px 64px; text-align: center; }
+  .badge { display: inline-block; background: #ede9fe; color: #7c3aed; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; margin-bottom: 24px; letter-spacing: 0.04em; }
+  h1 { font-size: 48px; font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; }
+  h1 span { color: #6366f1; }
+  .hero p { font-size: 18px; color: #64748b; line-height: 1.6; margin-bottom: 36px; }
+  .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn-lg { padding: 14px 32px; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-lg-primary { background: #6366f1; color: white; }
+  .btn-lg-outline { background: white; color: #0f172a; border: 1.5px solid #e2e8f0; }
+
+  /* HOW IT WORKS */
+  .section { max-width: 860px; margin: 0 auto; padding: 64px 24px; }
+  .section-label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #6366f1; text-transform: uppercase; margin-bottom: 12px; }
+  .section h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 40px; }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .step { background: white; border-radius: 12px; padding: 24px; border: 1px solid #f1f5f9; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: #ede9fe; color: #6366f1; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .step h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .step p { font-size: 13px; color: #64748b; line-height: 1.5; }
+
+  /* FOOTER CTA */
+  .footer-cta { background: #6366f1; text-align: center; padding: 64px 24px; }
+  .footer-cta h2 { font-size: 28px; font-weight: 800; color: white; margin-bottom: 12px; }
+  .footer-cta p { color: #c7d2fe; margin-bottom: 28px; }
+  .btn-white { background: white; color: #6366f1; padding: 14px 32px; border-radius: 10px; font-size: 16px; font-weight: 600; border: none; cursor: pointer; }
+
+  .divider { border: none; border-top: 1px solid #f1f5f9; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">pre<span>mortem</span></div>
+  <div class="nav-right">
+    <button class="btn-ghost">Log in</button>
+    <button class="btn-primary">Get started free</button>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="badge">Risk analysis for teams</div>
+  <h1>What if your project <span>failed?</span></h1>
+  <p>Pre-mortem helps teams surface risks before they happen — async input, team voting, clear action items.</p>
+  <div class="hero-cta">
+    <button class="btn-lg btn-lg-primary">Get started free</button>
+    <button class="btn-lg btn-lg-outline">See how it works</button>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <div class="section-label">How it works</div>
+  <h2>Four steps to a safer project</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Create a session</h3>
+      <p>Facilitator creates a pre-mortem session and shares the link with the team.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Team adds risks</h3>
+      <p>Everyone submits what they think could go wrong — privately, at their own pace.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Reveal & vote</h3>
+      <p>Facilitator reveals all risks. Team votes on the ones that matter most.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h3>Assign & export</h3>
+      <p>Top risks get owners and remarks. Export everything to your task tool.</p>
+    </div>
+  </div>
+</div>
+
+<div class="footer-cta">
+  <h2>Start your first pre-mortem today</h2>
+  <p>Free to use. No credit card required.</p>
+  <button class="btn-white">Create your organisation</button>
+</div>
+
+</body>
+</html>

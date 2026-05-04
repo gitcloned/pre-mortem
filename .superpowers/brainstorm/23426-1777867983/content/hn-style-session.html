@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pre-mortem — HN style</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Verdana, Geneva, sans-serif; font-size: 13px; background: #f6f6ef; color: #222; }
+  a { color: #222; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* HEADER */
+  #header { background: #4f46e5; padding: 4px 8px; display: flex; align-items: center; gap: 12px; }
+  #header .logo { color: white; font-weight: bold; font-size: 13px; border: 1px solid rgba(255,255,255,0.5); padding: 1px 4px; }
+  #header nav { display: flex; gap: 10px; }
+  #header nav a { color: white; font-size: 12px; }
+  #header .right { margin-left: auto; color: white; font-size: 12px; }
+
+  /* SUBHEADER / STATUS */
+  .subheader { background: #e8e8e0; padding: 4px 8px; font-size: 11px; color: #444; display: flex; gap: 16px; align-items: center; border-bottom: 1px solid #ccc; }
+  .subheader strong { color: #222; }
+  .subheader .status-open { color: #1a7f37; font-weight: bold; }
+  .subheader .status-voting { color: #9a6700; font-weight: bold; }
+  .subheader .status-closed { color: #444; font-weight: bold; }
+  .subheader .spacer { flex: 1; }
+  .subheader a.action-link { background: #4f46e5; color: white; padding: 2px 8px; font-size: 11px; font-weight: bold; text-decoration: none; }
+  .subheader a.action-link:hover { background: #3730a3; }
+
+  /* MAIN LAYOUT */
+  #main { max-width: 900px; margin: 0 auto; padding: 8px; }
+
+  /* SESSION INFO */
+  .session-info { padding: 6px 0 10px; border-bottom: 1px solid #ccc; margin-bottom: 8px; }
+  .session-info h1 { font-size: 14px; font-weight: bold; margin-bottom: 3px; }
+  .session-info .meta { font-size: 11px; color: #666; }
+  .session-info .prompt { margin-top: 6px; font-size: 12px; color: #555; background: #fffff0; border-left: 3px solid #9a6700; padding: 4px 8px; }
+
+  /* RISK TABLE */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  table thead tr { background: #e8e8e0; }
+  table thead th { text-align: left; font-size: 11px; font-weight: bold; padding: 4px 6px; border-bottom: 1px solid #ccc; color: #444; text-transform: uppercase; letter-spacing: 0.04em; }
+  table tbody tr { border-bottom: 1px solid #eee; vertical-align: top; }
+  table tbody tr:hover { background: #fffef0; }
+  table tbody td { padding: 6px 6px; font-size: 12px; line-height: 1.5; }
+  .vote-cell { text-align: center; width: 48px; }
+  .vote-num { font-size: 16px; font-weight: bold; color: #4f46e5; line-height: 1; }
+  .vote-btn { font-size: 10px; color: #999; cursor: pointer; display: block; text-decoration: none; }
+  .vote-btn:hover { color: #4f46e5; }
+  .vote-btn.active { color: #4f46e5; font-weight: bold; }
+  .risk-title { font-weight: bold; font-size: 12px; }
+  .risk-desc { font-size: 11px; color: #666; margin-top: 2px; }
+  .risk-author { font-size: 10px; color: #999; margin-top: 2px; }
+  .risk-tags { margin-top: 3px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 10px; color: #666; }
+  .tag::before { content: "["; }
+  .tag::after { content: "]"; }
+  .cat { color: #4f46e5; font-weight: bold; }
+  .row-num { color: #999; font-size: 11px; text-align: right; width: 24px; }
+  .action-cell { font-size: 11px; color: #444; }
+  .assignee { font-weight: bold; color: #222; }
+  .no-action { color: #bbb; font-style: italic; }
+
+  /* CATEGORY DIVIDER */
+  .cat-row td { background: #f0f0e8; font-size: 11px; font-weight: bold; color: #444; padding: 3px 6px; border-bottom: 1px solid #ddd; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ADD RISK FORM */
+  .add-form { background: #fffff0; border: 1px solid #ccc; padding: 10px 12px; margin-bottom: 12px; }
+  .add-form h3 { font-size: 12px; font-weight: bold; margin-bottom: 8px; color: #4f46e5; }
+  .form-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; flex-wrap: wrap; }
+  .form-row label { font-size: 11px; font-weight: bold; color: #444; min-width: 80px; padding-top: 4px; }
+  .form-row input, .form-row select, .form-row textarea { font-family: Verdana, Geneva, sans-serif; font-size: 12px; border: 1px solid #ccc; padding: 3px 5px; flex: 1; min-width: 200px; }
+  .form-row textarea { height: 52px; resize: vertical; }
+  .scale-row { display: flex; gap: 4px; }
+  .scale-btn { width: 26px; height: 22px; border: 1px solid #ccc; background: white; font-size: 11px; cursor: pointer; font-family: Verdana; }
+  .scale-btn.sel { background: #4f46e5; color: white; border-color: #4f46e5; }
+  .submit-btn { background: #4f46e5; color: white; border: none; padding: 4px 14px; font-size: 12px; font-weight: bold; cursor: pointer; font-family: Verdana; }
+  .submit-btn:hover { background: #3730a3; }
+  .cancel-link { font-size: 11px; color: #666; margin-left: 8px; cursor: pointer; }
+  .cancel-link:hover { text-decoration: underline; }
+
+  /* VOTE BUDGET */
+  .vote-budget { font-size: 11px; color: #444; padding: 4px 0 8px; }
+  .vote-budget strong { color: #4f46e5; }
+
+  /* STATS ROW */
+  .stats-row { font-size: 11px; color: #666; padding: 4px 0 10px; border-bottom: 1px solid #ccc; margin-bottom: 10px; }
+  .stats-row span { margin-right: 16px; }
+  .stats-row strong { color: #222; }
+
+  /* SECTION LABEL */
+  .section-label { font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; letter-spacing: 0.05em; margin: 12px 0 6px; }
+
+  /* MY RISKS COUNT */
+  .add-risk-link { font-size: 12px; color: #4f46e5; cursor: pointer; font-weight: bold; }
+  .add-risk-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <span class="logo">PM</span>
+  <nav>
+    <a href="#">Acme Corp</a>
+    <span style="color:rgba(255,255,255,0.4)">|</span>
+    <a href="#">Mobile App Relaunch</a>
+    <span style="color:rgba(255,255,255,0.4)">|</span>
+    <a href="#" style="color:rgba(255,255,255,0.7)">sessions</a>
+  </nav>
+  <div class="right">ashish | <a href="#" style="color:white">logout</a></div>
+</div>
+
+<!-- =================== TAB 1: OPEN SESSION =================== -->
+<div id="main">
+
+  <div class="session-info">
+    <h1>Launch risk review — v2.0</h1>
+    <div class="meta">Mobile App Relaunch &middot; created by ashish &middot; 7 participants joined &middot; session open</div>
+    <div class="prompt">"It's October 2026. The mobile app relaunch was a failure. What caused it?"</div>
+  </div>
+
+  <!-- FACILITATOR BAR (only shown to facilitator) -->
+  <div class="subheader">
+    <span>You are the facilitator.</span>
+    <span><strong>7</strong> participants &middot; waiting for input</span>
+    <span class="spacer"></span>
+    <a class="action-link" href="#">Reveal all risks &rarr;</a>
+  </div>
+
+  <div style="height:10px;"></div>
+
+  <!-- MY RISKS -->
+  <div class="section-label">My risks (2 added) &mdash; <a class="add-risk-link" href="#">+ add risk</a></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:24px;">#</th>
+        <th>Risk</th>
+        <th style="width:80px;">Category</th>
+        <th style="width:60px;">Likelihood</th>
+        <th style="width:60px;">Impact</th>
+        <th style="width:60px;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="row-num">1.</td>
+        <td>
+          <div class="risk-title">Insufficient beta testing with real users</div>
+          <div class="risk-desc">We skipped a proper beta program. By launch, we hadn't seen how non-technical users interact with the new onboarding flow.</div>
+        </td>
+        <td style="font-size:11px;color:#4f46e5;font-weight:bold;">Technical</td>
+        <td style="font-size:12px;text-align:center;">4 / 5</td>
+        <td style="font-size:12px;text-align:center;">5 / 5</td>
+        <td style="font-size:11px;"><a href="#">edit</a> &nbsp; <a href="#" style="color:#c00;">delete</a></td>
+      </tr>
+      <tr>
+        <td class="row-num">2.</td>
+        <td>
+          <div class="risk-title">Marketing and engineering timelines misaligned</div>
+          <div class="risk-desc">Marketing committed to a launch date based on last quarter's estimates. Engineering has since revised scope upward.</div>
+        </td>
+        <td style="font-size:11px;color:#4f46e5;font-weight:bold;">Timeline</td>
+        <td style="font-size:12px;text-align:center;">5 / 5</td>
+        <td style="font-size:12px;text-align:center;">4 / 5</td>
+        <td style="font-size:11px;"><a href="#">edit</a> &nbsp; <a href="#" style="color:#c00;">delete</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ADD RISK FORM -->
+  <div class="add-form">
+    <h3>+ Add a risk</h3>
+    <div class="form-row">
+      <label>Title *</label>
+      <input type="text" placeholder="What could go wrong?" style="flex:1;">
+    </div>
+    <div class="form-row">
+      <label>Description</label>
+      <textarea placeholder="Imagine the project failed — describe what happened and why"></textarea>
+    </div>
+    <div class="form-row">
+      <label>Category *</label>
+      <select>
+        <option>Timeline</option>
+        <option>Technical</option>
+        <option>Team</option>
+        <option>External</option>
+        <option>Scope</option>
+        <option>Communication</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Likelihood</label>
+      <div class="scale-row">
+        <button class="scale-btn">1</button>
+        <button class="scale-btn">2</button>
+        <button class="scale-btn sel">3</button>
+        <button class="scale-btn">4</button>
+        <button class="scale-btn">5</button>
+      </div>
+      <span style="font-size:10px;color:#999;padding-top:5px;margin-left:8px;">How likely?</span>
+    </div>
+    <div class="form-row">
+      <label>Impact</label>
+      <div class="scale-row">
+        <button class="scale-btn">1</button>
+        <button class="scale-btn">2</button>
+        <button class="scale-btn">3</button>
+        <button class="scale-btn sel">4</button>
+        <button class="scale-btn">5</button>
+      </div>
+      <span style="font-size:10px;color:#999;padding-top:5px;margin-left:8px;">How severe?</span>
+    </div>
+    <div class="form-row">
+      <label></label>
+      <div>
+        <button class="submit-btn">Save risk</button>
+        <span class="cancel-link">cancel</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:20px; border-top:1px solid #ccc; margin-top:8px;"></div>
+
+  <!-- =================== VOTING STATE =================== -->
+  <div style="margin-top:16px;">
+    <div class="section-label" style="font-size:13px;color:#222;text-transform:none;letter-spacing:0;">— Voting state (below) —</div>
+
+    <div class="subheader" style="margin-bottom:8px;">
+      <span class="status-voting">&#11044; Voting open</span>
+      <span>7 participants &middot; 14 risks</span>
+      <span class="spacer"></span>
+      <a class="action-link" href="#">Close voting &rarr;</a>
+    </div>
+
+    <div class="vote-budget">Your votes remaining: <strong>1 of 3</strong> &mdash; concentrate votes on risks you care about most</div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:48px;text-align:center;">Votes</th>
+          <th>#</th>
+          <th>Risk</th>
+          <th style="width:80px;">Category</th>
+          <th style="width:60px;">L / I</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="vote-cell">
+            <div class="vote-num">11</div>
+            <a class="vote-btn active" href="#">&#9650; voted</a>
+          </td>
+          <td class="row-num">1.</td>
+          <td>
+            <div class="risk-title">Marketing and engineering timelines misaligned</div>
+            <div class="risk-desc">Marketing committed to a launch date based on last quarter's estimates. Engineering has since revised scope upward.</div>
+          </td>
+          <td style="font-size:11px;color:#4f46e5;font-weight:bold;">Timeline</td>
+          <td style="font-size:11px;text-align:center;color:#666;">5 / 4</td>
+        </tr>
+        <tr>
+          <td class="vote-cell">
+            <div class="vote-num">9</div>
+            <a class="vote-btn active" href="#">&#9650; voted</a>
+          </td>
+          <td class="row-num">2.</td>
+          <td>
+            <div class="risk-title">Insufficient beta testing with real users</div>
+            <div class="risk-desc">Skipped proper beta program — onboarding flow never validated with non-technical users before launch.</div>
+          </td>
+          <td style="font-size:11px;color:#4f46e5;font-weight:bold;">Technical</td>
+          <td style="font-size:11px;text-align:center;color:#666;">4 / 5</td>
+        </tr>
+        <tr>
+          <td class="vote-cell">
+            <div class="vote-num" style="color:#999;">4</div>
+            <a class="vote-btn" href="#">&#9650; vote</a>
+          </td>
+          <td class="row-num">3.</td>
+          <td>
+            <div class="risk-title">Third-party API dependency slips</div>
+            <div class="risk-desc">We rely on a payments provider releasing a new SDK. Their track record on delivery is poor.</div>
+          </td>
+          <td style="font-size:11px;color:#4f46e5;font-weight:bold;">External</td>
+          <td style="font-size:11px;text-align:center;color:#666;">3 / 5</td>
+        </tr>
+        <tr>
+          <td class="vote-cell">
+            <div class="vote-num" style="color:#999;">2</div>
+            <a class="vote-btn" href="#">&#9650; vote</a>
+          </td>
+          <td class="row-num">4.</td>
+          <td>
+            <div class="risk-title">Performance regression on low-end Android devices</div>
+            <div class="risk-desc">New animation library hasn't been benchmarked below mid-range hardware.</div>
+          </td>
+          <td style="font-size:11px;color:#4f46e5;font-weight:bold;">Technical</td>
+          <td style="font-size:11px;text-align:center;color:#666;">3 / 3</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- =================== CLOSED STATE =================== -->
+  <div style="margin-top:16px;">
+    <div class="section-label" style="font-size:13px;color:#222;text-transform:none;letter-spacing:0;">— Closed state (below) —</div>
+
+    <div class="subheader" style="margin-bottom:8px;">
+      <span class="status-closed">&#9632; Session closed</span>
+      <span>14 risks &middot; 7 participants &middot; 21 votes cast</span>
+      <span class="spacer"></span>
+      <a class="action-link" href="#">&#8595; Export CSV / Markdown</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:48px;text-align:center;">Votes</th>
+          <th>#</th>
+          <th>Risk</th>
+          <th style="width:80px;">Category</th>
+          <th style="width:56px;">L / I</th>
+          <th>Action item</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="vote-cell"><div class="vote-num">11</div></td>
+          <td class="row-num">1.</td>
+          <td>
+            <div class="risk-title">Marketing and engineering timelines misaligned</div>
+            <div class="risk-desc">Marketing committed to a launch date based on last quarter's estimates.</div>
+          </td>
+          <td style="font-size:11px;color:#4f46e5;font-weight:bold;">Timeline</td>
+          <td style="font-size:11px;text-align:center;color:#666;">5 / 4</td>
+          <td class="action-cell">
+            <span class="assignee">Sarah K.</span> — Schedule joint timeline review with marketing and eng leads. Agree single source-of-truth date.
+            <div style="margin-top:3px;"><a href="#" style="font-size:10px;color:#4f46e5;">+ add another</a></div>
+          </td>
+        </tr>
+        <tr>
+          <td class="vote-cell"><div class="vote-num">9</div></td>
+          <td class="row-num">2.</td>
+          <td>
+            <div class="risk-title">Insufficient beta testing with real users</div>
+            <div class="risk-desc">Skipped proper beta program — onboarding never validated with non-technical users.</div>
+          </td>
+          <td style="font-size:11px;color:#4f46e5;font-weight:bold;">Technical</td>
+          <td style="font-size:11px;text-align:center;color:#666;">4 / 5</td>
+          <td class="action-cell">
+            <span class="no-action">none yet</span>
+            <div style="display:flex;gap:4px;margin-top:4px;">
+              <input type="text" placeholder="Assignee" style="font-size:11px;border:1px solid #ccc;padding:2px 4px;width:90px;font-family:Verdana;">
+              <input type="text" placeholder="Remarks" style="font-size:11px;border:1px solid #ccc;padding:2px 4px;flex:1;font-family:Verdana;">
+              <button style="font-size:10px;background:#4f46e5;color:white;border:none;padding:2px 6px;cursor:pointer;font-family:Verdana;">add</button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="vote-cell"><div class="vote-num" style="color:#999;">4</div></td>
+          <td class="row-num">3.</td>
+          <td>
+            <div class="risk-title">Third-party API dependency slips</div>
+            <div class="risk-desc">Payments provider SDK delivery track record is poor.</div>
+          </td>
+          <td style="font-size:11px;color:#4f46e5;font-weight:bold;">External</td>
+          <td style="font-size:11px;text-align:center;color:#666;">3 / 5</td>
+          <td class="action-cell">
+            <span class="no-action">none yet</span>
+            <div style="display:flex;gap:4px;margin-top:4px;">
+              <input type="text" placeholder="Assignee" style="font-size:11px;border:1px solid #ccc;padding:2px 4px;width:90px;font-family:Verdana;">
+              <input type="text" placeholder="Remarks" style="font-size:11px;border:1px solid #ccc;padding:2px 4px;flex:1;font-family:Verdana;">
+              <button style="font-size:10px;background:#4f46e5;color:white;border:none;padding:2px 6px;cursor:pointer;font-family:Verdana;">add</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+</body>
+</html>
