@@ -1,13 +1,16 @@
 import {
   doc, collection, addDoc, setDoc, getDoc, getDocs,
   updateDoc, deleteDoc, query, where, orderBy,
-  serverTimestamp, arrayUnion, onSnapshot,
+  serverTimestamp, arrayUnion, arrayRemove, onSnapshot,
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import { generateToken } from './tokens'
 
 export async function upsertUser(uid, displayName, email) {
-  await setDoc(doc(db, 'users', uid), { displayName, email, createdAt: serverTimestamp() }, { merge: true })
+  await setDoc(doc(db, 'users', uid), {
+    displayName, email, orgIds: [],
+    createdAt: serverTimestamp(),
+  }, { merge: true })
 }
 
 export async function createOrg(uid, name) {
@@ -18,6 +21,7 @@ export async function createOrg(uid, name) {
   await setDoc(doc(db, 'organizations', orgRef.id, 'members', uid), {
     role: 'owner', joinedAt: serverTimestamp(),
   })
+  await updateDoc(doc(db, 'users', uid), { orgIds: arrayUnion(orgRef.id) })
   return orgRef.id
 }
 
@@ -35,11 +39,13 @@ export async function getOrgByInviteToken(token) {
 }
 
 export async function getUserOrgs(uid) {
-  const snap = await getDocs(collection(db, 'organizations'))
+  const userSnap = await getDoc(doc(db, 'users', uid))
+  const userData = userSnap.data()
+  if (!userData?.orgIds?.length) return []
   const orgs = []
-  for (const orgDoc of snap.docs) {
-    const memberSnap = await getDoc(doc(db, 'organizations', orgDoc.id, 'members', uid))
-    if (memberSnap.exists()) orgs.push({ id: orgDoc.id, ...orgDoc.data() })
+  for (const orgId of userData.orgIds) {
+    const orgSnap = await getDoc(doc(db, 'organizations', orgId))
+    if (orgSnap.exists()) orgs.push({ id: orgSnap.id, ...orgSnap.data() })
   }
   return orgs
 }
@@ -65,6 +71,7 @@ export async function joinOrgByToken(token, uid) {
   await setDoc(doc(db, 'organizations', org.id, 'members', uid), {
     role: 'member', joinedAt: serverTimestamp(),
   })
+  await updateDoc(doc(db, 'users', uid), { orgIds: arrayUnion(org.id) })
   return org.id
 }
 
@@ -74,6 +81,7 @@ export async function updateMemberRole(orgId, uid, role) {
 
 export async function removeMember(orgId, uid) {
   await deleteDoc(doc(db, 'organizations', orgId, 'members', uid))
+  await updateDoc(doc(db, 'users', uid), { orgIds: arrayRemove(orgId) })
 }
 
 export async function createProject(orgId, uid, name, description) {

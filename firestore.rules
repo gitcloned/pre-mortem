@@ -12,22 +12,19 @@ service cloud.firestore {
     function isOrgAdmin(orgId) {
       return isMember(orgId) && (memberRole(orgId) == 'owner' || memberRole(orgId) == 'admin');
     }
-    function isSessionParticipant(sessionData) {
-      return request.auth.uid in sessionData.participantIds;
-    }
 
     match /users/{userId} {
       allow read, write: if isAuth() && request.auth.uid == userId;
     }
 
     match /organizations/{orgId} {
-      allow read: if isAuth() && isMember(orgId);
+      allow read: if isAuth();
       allow create: if isAuth();
       allow update: if isAuth() && isOrgAdmin(orgId);
     }
 
     match /organizations/{orgId}/members/{userId} {
-      allow read: if isAuth() && isMember(orgId);
+      allow read: if isAuth();
       allow create: if isAuth() && (request.auth.uid == userId || isOrgAdmin(orgId));
       allow update: if isAuth() && isOrgAdmin(orgId);
       allow delete: if isAuth() && isOrgAdmin(orgId);
@@ -40,7 +37,7 @@ service cloud.firestore {
     }
 
     match /sessions/{sessionId} {
-      allow read: if isAuth() && (isMember(resource.data.orgId) || isSessionParticipant(resource.data));
+      allow read: if isAuth();
       allow create: if isAuth() && isMember(request.resource.data.orgId);
       allow update: if isAuth() && (
         request.auth.uid == resource.data.facilitatorId ||
