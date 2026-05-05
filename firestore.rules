@@ -58,7 +58,7 @@ service cloud.firestore {
       allow read: if isAuth();
       allow create: if isAuth() &&
         request.resource.data.userId == request.auth.uid &&
-        get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.status == 'voting';
+        get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.status in ['open', 'voting'];
     }
 
     match /actionItems/{itemId} {

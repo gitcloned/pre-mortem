@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 import {
   subscribeSession, getProject, getOrg,
   getMyRisks, getSessionRisks, subscribeVotes,
-  getSessionActionItems, advanceSessionStatus,
+  getSessionActionItems, advanceSessionStatus, debugSession,
 } from '../lib/firestore'
 import { SessionSidebar } from '../session/SessionSidebar'
 import { RevealedTable } from '../session/RevealedTable'
@@ -13,8 +13,8 @@ import { VotingTable } from '../session/VotingTable'
 import { ClosedTable } from '../session/ClosedTable'
 import { toMarkdown, toCSV } from '../lib/export'
 
-const STATUS_NEXT = { open: 'voting', voting: 'closed' }
-const STATUS_LABEL = { open: 'Open voting →', voting: 'Close voting →' }
+const STATUS_NEXT = { open: 'closed' }
+const STATUS_LABEL = { open: 'Close session →' }
 
 export function SessionPage() {
   const { sessionId } = useParams()
@@ -26,9 +26,16 @@ export function SessionPage() {
   const [allRisks, setAllRisks] = useState([])
   const [votes, setVotes] = useState([])
   const [actionItems, setActionItems] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredRisks = allRisks.filter(r =>
+    r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   useEffect(() => {
     if (!sessionId) return
+    debugSession(sessionId)
     const unsubSession = subscribeSession(sessionId, setSession)
     const unsubVotes = subscribeVotes(sessionId, setVotes)
     return () => { unsubSession(); unsubVotes() }
@@ -109,8 +116,7 @@ export function SessionPage() {
 
       <div className="subheader">
         <span className={`status-${session.status}`}>
-          {session.status === 'open' && '● Adding risks — all visible'}
-          {session.status === 'voting' && '● Voting open'}
+          {session.status === 'open' && '● Adding risks & voting'}
           {session.status === 'closed' && '■ Session closed'}
         </span>
         {session.status !== 'closed' && <span className="muted">{session.participantIds?.length ?? 0} participants · {allRisks.length} risks</span>}
@@ -135,20 +141,39 @@ export function SessionPage() {
           </div>
 
           {session.status === 'open' && (
-            <><div className="section-sep">Risks ({allRisks.length}) — all visible</div>
-              <RevealedTable risks={allRisks} currentUserId={user.uid} canEdit={true} onChanged={loadRisks} />
-            </>
-          )}
-          {session.status === 'voting' && (
-            <><div className="section-sep">All risks ({allRisks.length}) — vote on what concerns you most</div>
-              <VotingTable risks={allRisks} votes={votes} currentUserId={user.uid} sessionId={sessionId}
-                votesPerParticipant={session.votesPerParticipant ?? 3} />
+            <>
+              <div className="section-sep">Risks ({allRisks.length}) — add and vote on concerns</div>
+              <div style={{marginBottom:12}}>
+                <input
+                  type="text"
+                  placeholder="Search risks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{width:'100%',padding:'8px 12px',border:'1px solid #ddd',borderRadius:4,fontSize:14,boxSizing:'border-box'}}
+                />
+              </div>
+              <div style={{height:'calc(100vh - 400px)',overflow:'auto',border:'1px solid #eee',borderRadius:4}}>
+                <VotingTable risks={filteredRisks} votes={votes} currentUserId={user.uid} sessionId={sessionId}
+                  votesPerParticipant={session.votesPerParticipant ?? 3} onChanged={loadRisks} />
+              </div>
             </>
           )}
           {session.status === 'closed' && (
-            <><div className="section-sep">Results — ranked by votes</div>
-              <ClosedTable risks={allRisks} votes={votes} actionItems={actionItems} sessionId={sessionId}
-                onActionAdded={loadActionItems} />
+            <>
+              <div className="section-sep">Results — ranked by votes</div>
+              <div style={{marginBottom:12}}>
+                <input
+                  type="text"
+                  placeholder="Search risks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{width:'100%',padding:'8px 12px',border:'1px solid #ddd',borderRadius:4,fontSize:14,boxSizing:'border-box'}}
+                />
+              </div>
+              <div style={{height:'calc(100vh - 400px)',overflow:'auto',border:'1px solid #eee',borderRadius:4}}>
+                <ClosedTable risks={filteredRisks} votes={votes} actionItems={actionItems} sessionId={sessionId}
+                  onActionAdded={loadActionItems} />
+              </div>
             </>
           )}
         </div>

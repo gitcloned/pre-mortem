@@ -1,6 +1,6 @@
 import {
   doc, collection, addDoc, setDoc, getDoc, getDocs,
-  updateDoc, deleteDoc, query, where, orderBy,
+  updateDoc, deleteDoc, query, where, orderBy, limit,
   serverTimestamp, arrayUnion, arrayRemove, onSnapshot,
 } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -186,15 +186,37 @@ export async function getMyRisks(sessionId, authorId) {
 
 export async function getSessionRisks(sessionId) {
   const snap = await getDocs(query(
-    collection(db, 'risks'), where('sessionId', '==', sessionId),
+    collection(db, 'risks'), where('sessionId', '==', sessionId), orderBy('createdAt', 'asc'),
   ))
-  const risks = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-  risks.sort((a, b) => (a.createdAt?.seconds ?? 0) - (b.createdAt?.seconds ?? 0))
-  return risks
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
 }
 
-export async function castVote(sessionId, riskId, userId) {
-  await addDoc(collection(db, 'votes'), { sessionId, riskId, userId, timestamp: serverTimestamp() })
+export async function hasAnyRisk(sessionId) {
+  const snap = await getDocs(query(
+    collection(db, 'risks'), where('sessionId', '==', sessionId), limit(1),
+  ))
+  return !snap.empty
+}
+
+export async function debugSession(sessionId) {
+  const session = await getSession(sessionId)
+  const risks = await getSessionRisks(sessionId)
+  console.log('DEBUG Session:', session)
+  console.log('DEBUG Risks:', risks)
+  // Fix legacy "revealed" status
+  if (session?.status === 'revealed') {
+    console.log('Migrating legacy "revealed" status to "open"')
+    await advanceSessionStatus(sessionId, 'open')
+  }
+  return { session, risks }
+}
+
+export async function castVote(sessionId, riskId, userId, direction = 1) {
+  await addDoc(collection(db, 'votes'), { sessionId, riskId, userId, direction, timestamp: serverTimestamp() })
+}
+
+export async function deleteVote(voteId) {
+  await deleteDoc(doc(db, 'votes', voteId))
 }
 
 export function subscribeVotes(sessionId, cb) {

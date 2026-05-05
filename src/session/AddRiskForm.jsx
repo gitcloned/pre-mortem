@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { addRisk } from '../lib/firestore'
 
-const CATEGORIES = ['Timeline', 'Technical', 'Team', 'External', 'Scope', 'Communication']
+const CATEGORIES = ['We are working on it', 'No one is talking about it', 'Seems big, but is not']
 
 export function AddRiskForm({ sessionId, user, onAdded }) {
   const [form, setForm] = useState({
-    title: '', description: '', category: 'Timeline', likelihood: 3, impact: 3,
+    title: '', description: '', category: 'We are working on it', likelihood: 3, impact: 3,
   })
   const [saving, setSaving] = useState(false)
 
@@ -16,7 +16,7 @@ export function AddRiskForm({ sessionId, user, onAdded }) {
     await addRisk(sessionId, user.uid, user.displayName || user.email, {
       ...form, category: form.category.toLowerCase(),
     })
-    setForm({ title: '', description: '', category: 'Timeline', likelihood: 3, impact: 3 })
+    setForm({ title: '', description: '', category: 'We are working on it', likelihood: 3, impact: 3 })
     setSaving(false)
     onAdded?.()
   }
